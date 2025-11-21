@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import Image from 'next/image'
+import Image, { StaticImageData } from 'next/image'
 import img01 from '../../../image/image_01.webp'
 import img02 from '../../../image/image_02.webp'
 import img03 from '../../../image/image_03.webp'
@@ -33,7 +33,7 @@ export default function RelatorioPage({
   const nomeKey = nomeEquip?.trim().toUpperCase()
   const id = typeof searchParams?.id === 'string' ? searchParams.id : undefined
   const fone = typeof searchParams?.fone === 'string' ? searchParams.fone : undefined
-  const equipMap: Record<string, any> = {
+  const equipMap: Record<string, StaticImageData> = {
     'VTEC-500': vtec500,
     'VTEC-2000': vtec2000,
     'VTEC-2000 TRITURADOR': vtec2000Triturador,

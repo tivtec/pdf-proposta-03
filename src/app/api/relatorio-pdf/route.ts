@@ -1,22 +1,11 @@
 import { NextRequest } from 'next/server'
 import { headers } from 'next/headers'
-import chromium from '@sparticuz/chromium'
-import path from 'node:path'
-import fs from 'node:fs'
-import puppeteerCore from 'puppeteer-core'
+import { chromium } from 'playwright'
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 async function launchBrowser() {
-  const ws = process.env.PUPPETEER_WS_ENDPOINT
-  if (ws) {
-    return puppeteerCore.connect({ browserWSEndpoint: ws })
-  }
-  const isVercel = Boolean(process.env.VERCEL)
-  if (isVercel) {
-    throw new Error('Missing PUPPETEER_WS_ENDPOINT')
-  }
-  const puppeteer = (await import('puppeteer')).default
-  return puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+  return chromium.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] })
 }
 
 export async function GET(req: NextRequest) {
@@ -27,37 +16,32 @@ export async function GET(req: NextRequest) {
   const targetUrl = `${protocol}://${host}/relatorio${query ? `?${query}` : ''}`
   const debug = req.nextUrl.searchParams.get('debug')
 
-  if (debug === 'true') {
-    const hasWs = Boolean(process.env.PUPPETEER_WS_ENDPOINT)
-    const isVercel = Boolean(process.env.VERCEL)
-    return new Response(
-      JSON.stringify({ targetUrl, env: { isVercel, hasWs } }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    )
-  }
+  const debugMode = debug === 'true'
 
   try {
     const browser = await launchBrowser()
     const page = await browser.newPage()
     page.setDefaultNavigationTimeout(30000)
-    await page.emulateMediaType('screen')
-    await page.goto(targetUrl, { waitUntil: 'domcontentloaded' })
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true })
+    await page.emulateMedia({ media: 'screen' })
+    await page.goto(targetUrl, { waitUntil: 'networkidle' })
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' },
+    })
     await browser.close()
 
-    const ab = pdfBuffer.buffer.slice(pdfBuffer.byteOffset, pdfBuffer.byteOffset + pdfBuffer.byteLength)
-    return new Response(ab as any, {
+    const ab: ArrayBuffer = pdfBuffer.buffer.slice(pdfBuffer.byteOffset, pdfBuffer.byteOffset + pdfBuffer.byteLength)
+    return new Response(ab, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'inline; filename="relatorio.pdf"',
+        'Content-Disposition': `${debugMode ? 'inline' : 'attachment'}; filename="relatorio.pdf"`,
         'Cache-Control': 'no-store',
       },
     })
-  } catch (err: any) {
-    const msg = typeof err?.message === 'string' ? err.message : 'PDF generation failed'
-    const hasWs = Boolean(process.env.PUPPETEER_WS_ENDPOINT)
-    const isVercel = Boolean(process.env.VERCEL)
-    return new Response(JSON.stringify({ error: msg, url: targetUrl, env: { isVercel, hasWs } }), {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'PDF generation failed'
+    return new Response(JSON.stringify({ error: msg, url: targetUrl }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
     })
