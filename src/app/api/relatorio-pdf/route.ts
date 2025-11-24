@@ -14,6 +14,18 @@ export async function GET(req: NextRequest) {
   const debug = req.nextUrl.searchParams.get('debug') === 'true'
   const shouldPost = req.nextUrl.searchParams.get('post') === 'true'
   const webhookParam = req.nextUrl.searchParams.get('webhook') || undefined
+  const ping = req.nextUrl.searchParams.get('ping') === 'true'
+
+  if (ping) {
+    const meta = {
+      vercel: !!process.env.VERCEL,
+      commit: process.env.VERCEL_GIT_COMMIT_SHA || null,
+      build: process.env.VERCEL_GIT_COMMIT_MESSAGE || null,
+      repo: process.env.VERCEL_GIT_REPO_SLUG || null,
+      branch: process.env.VERCEL_GIT_COMMIT_REF || null,
+    }
+    return new Response(JSON.stringify(meta), { status: 200, headers: { 'Content-Type': 'application/json' } })
+  }
 
   try {
     const browser = await puppeteer.launch({
