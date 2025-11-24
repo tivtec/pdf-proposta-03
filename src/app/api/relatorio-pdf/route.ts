@@ -29,11 +29,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const binDir = path.join(process.cwd(), 'node_modules', '@sparticuz', 'chromium', 'bin')
+    const packUrl = process.env.CHROMIUM_PACK_URL || 'https://github.com/Sparticuz/chromium/releases/download/v119.0.2/chromium-pack.tar'
     const browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(binDir),
+      executablePath: await chromium.executablePath(packUrl),
       headless: true,
     })
     const page = await browser.newPage()
