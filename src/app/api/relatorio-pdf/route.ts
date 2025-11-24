@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { headers } from 'next/headers'
 import chromium from '@sparticuz/chromium'
 import puppeteer from 'puppeteer-core'
+import path from 'path'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
@@ -28,10 +29,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const binDir = path.join(process.cwd(), 'node_modules', '@sparticuz', 'chromium', 'bin')
     const browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
+      executablePath: await chromium.executablePath(binDir),
       headless: true,
     })
     const page = await browser.newPage()
