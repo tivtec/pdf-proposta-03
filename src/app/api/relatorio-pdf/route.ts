@@ -23,7 +23,12 @@ function resolveExecutablePath(): string | undefined {
 
 async function launchBrowser() {
   const executablePath = resolveExecutablePath()
-  return chromium.launch({ executablePath, args: ['--headless=new', '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process', '--no-zygote'] })
+  const isWin = process.platform === 'win32'
+  const args = ['--headless=new']
+  if (!isWin) {
+    args.push('--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process', '--no-zygote')
+  }
+  return chromium.launch({ executablePath, args })
 }
 
 export async function GET(req: NextRequest) {
@@ -43,7 +48,15 @@ export async function GET(req: NextRequest) {
     const page = await browser.newPage()
     page.setDefaultNavigationTimeout(30000)
     await page.emulateMedia({ media: 'screen' })
-    await page.goto(targetUrl, { waitUntil: 'networkidle' })
+    await page.goto(targetUrl, { waitUntil: 'domcontentloaded' })
+    await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
+    await page.evaluate(() => {
+      const doc = document as unknown as { fonts?: { ready?: Promise<void> } }
+      const fonts = doc.fonts
+      if (fonts && typeof fonts.ready?.then === 'function') return fonts.ready as Promise<void>
+      return Promise.resolve()
+    })
+    await page.waitForTimeout(150)
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
