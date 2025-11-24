@@ -6,7 +6,8 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 async function launchBrowser() {
-  return chromium.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+  const executablePath = chromium.executablePath()
+  return chromium.launch({ executablePath, args: ['--headless=new', '--no-sandbox', '--disable-setuid-sandbox'] })
 }
 
 export async function GET(req: NextRequest) {
