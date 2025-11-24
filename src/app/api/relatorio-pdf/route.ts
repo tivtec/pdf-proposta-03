@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { headers } from 'next/headers'
-import { chromium } from 'playwright'
+import chromium from '@sparticuz/chromium'
+import puppeteer from 'puppeteer-core'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
@@ -15,11 +16,16 @@ export async function GET(req: NextRequest) {
   const webhookParam = req.nextUrl.searchParams.get('webhook') || undefined
 
   try {
-    const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: true,
+    })
     const page = await browser.newPage()
     page.setDefaultNavigationTimeout(30000)
-    await page.emulateMedia({ media: 'screen' })
-    await page.goto(targetUrl, { waitUntil: 'networkidle' })
+    await page.emulateMediaType('screen')
+    await page.goto(targetUrl, { waitUntil: 'networkidle0' })
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
