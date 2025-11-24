@@ -29,17 +29,19 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const packUrl = process.env.CHROMIUM_PACK_URL || 'https://github.com/Sparticuz/chromium/releases/download/v119.0.2/chromium-pack.tar'
+    chromium.setHeadlessMode = true
+    chromium.setGraphicsMode = false
     const browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(packUrl),
+      executablePath: await chromium.executablePath(),
       headless: true,
     })
     const page = await browser.newPage()
     page.setDefaultNavigationTimeout(30000)
     await page.emulateMediaType('screen')
-    await page.goto(targetUrl, { waitUntil: 'networkidle0' })
+    await page.goto(targetUrl, { waitUntil: 'domcontentloaded' })
+    await new Promise((r) => setTimeout(r, 250))
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
