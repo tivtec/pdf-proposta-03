@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { headers } from 'next/headers'
 import { chromium } from 'playwright'
+process.env.PLAYWRIGHT_BROWSERS_PATH = process.env.PLAYWRIGHT_BROWSERS_PATH || '0'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
