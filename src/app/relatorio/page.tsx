@@ -14,6 +14,7 @@ import vtec12000 from '../../../image/VTEC 12000.webp'
 import vtec2000TorreTriturador from '../../../image/VTEC 2000 TORRE COM TRITURADOR.png'
 import vtec2000Triturador from '../../../image/VTEC 2000 TRITURADOR.png'
 import { Poppins } from 'next/font/google'
+import dynamic from 'next/dynamic'
 
 export const metadata: Metadata = {
   title: 'Relatório',
@@ -45,6 +46,7 @@ export default function RelatorioPage({
     'VTEC-2000 TANQUE TRITURADOR': vtec2000Triturador,
   }
   const equipImg = nomeKey ? equipMap[nomeKey] : undefined
+  const PrintControls = dynamic(() => import('./PrintControls'), { ssr: false })
   return (
     <main style={{ padding: 24, maxWidth: 793, margin: '0 auto' }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -59,6 +61,7 @@ export default function RelatorioPage({
       <div className={poppins.className} style={{ marginTop: 50, fontSize: 18, fontWeight: 500, color: '#128f7f' }}>
         Olá, {pessoa ?? 'nome _pessoa'}
       </div>
+      <PrintControls />
       <p
         className={poppins.className}
         style={{
